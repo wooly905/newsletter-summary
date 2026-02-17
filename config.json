@@ -1,0 +1,28 @@
+{
+  "gmail": {
+    "user": "you@gmail.com",
+    "app_password": "xxxx xxxx xxxx xxxx"
+  },
+  "openai": {
+    "provider": "azure",
+    "api_key": "your-azure-api-key",
+    "model": "gpt-4o-mini",
+    "azure": {
+      "endpoint": "https://your-resource.openai.azure.com/",
+      "deployment_name": "your-deployment-name",
+      "api_version": "2024-08-01-preview"
+    }
+  },
+  "senders": [
+    {
+      "name": "TechCrunch Newsletter",
+      "email": "newsletter@techcrunch.com",
+      "enabled": true
+    },
+    {
+      "name": "The Verge",
+      "email": "newsletter@theverge.com",
+      "enabled": false
+    }
+  ]
+}
