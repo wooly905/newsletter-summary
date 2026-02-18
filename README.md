@@ -16,23 +16,39 @@ pip install -r requirements.txt
 
 ## 設定
 
-編輯 `config.json`：
+設定拆成兩份，**密鑰不進版控**：
+
+- **`config.json`**：可提交到 Git。放 OpenAI 型號、senders 等非敏感設定。
+- **`config.secrets.json`**：不提交（已在 `.gitignore`）。放 Gmail 帳密、API Key 等。
+
+第一次使用請：
+
+1. 複製 `config.secrets.example.json` 為 `config.secrets.json`
+2. 在 `config.secrets.json` 填入你的 Gmail、OpenAI/Azure API key 等
+
+### config.secrets.json 欄位
 
 | 欄位 | 說明 |
 |------|------|
 | `gmail.user` | 你的 Gmail 帳號 |
 | `gmail.app_password` | Gmail 應用程式密碼（16碼） |
-| `openai.provider` | `"azure"` 或 `"openai"` |
 | `openai.api_key` | Azure OpenAI 或 OpenAI API Key |
 | `openai.azure.endpoint` | Azure OpenAI endpoint URL |
+
+### config.json 欄位（可公開）
+
+| 欄位 | 說明 |
+|------|------|
+| `openai.provider` | `"azure"` 或 `"openai"` |
+| `openai.model` | 模型名稱 |
 | `openai.azure.deployment_name` | Azure 部署名稱 |
-| `openai.azure.api_version` | API 版本（建議 `2024-08-01-preview`） |
+| `openai.azure.api_version` | API 版本 |
 | `senders` | Newsletter 寄件者清單 |
 
 ### 取得 Gmail App Password
 1. Google 帳號 → 安全性 → 開啟兩步驟驗證
 2. 搜尋「應用程式密碼」→ 產生 16 碼密碼
-3. 填入 `config.json`
+3. 填入 `config.secrets.json` 的 `gmail.app_password`
 
 ### 新增／停用 Newsletter 來源
 
@@ -70,8 +86,10 @@ python main.py
 
 ```
 newsletter_bot/
-├── config.json          # 設定檔（含機密，勿上傳 git）
-├── config.py            # 讀取設定
+├── config.json              # 一般設定（可提交）
+├── config.secrets.json      # 密鑰（勿提交，從 config.secrets.example.json 複製）
+├── config.secrets.example.json  # 密鑰範本
+├── config.py                # 讀取設定
 ├── gmail_client.py      # Gmail IMAP 讀取／刪除
 ├── scraper.py           # 網頁內容抓取
 ├── openai_client.py     # Azure OpenAI 摘要

@@ -1,28 +1,37 @@
 {
-  "gmail": {
-    "user": "you@gmail.com",
-    "app_password": "xxxx xxxx xxxx xxxx"
-  },
   "openai": {
     "provider": "azure",
-    "api_key": "your-azure-api-key",
-    "model": "gpt-4o-mini",
+    "model": "gpt-5-chat",
     "azure": {
-      "endpoint": "https://your-resource.openai.azure.com/",
-      "deployment_name": "your-deployment-name",
-      "api_version": "2024-08-01-preview"
+      "deployment_name": "gpt-5-chat",
+      "api_version": "2024-12-01-preview"
     }
   },
   "senders": [
     {
-      "name": "TechCrunch Newsletter",
-      "email": "newsletter@techcrunch.com",
+      "name": "Marktechpost AI",
+      "email": "marktechpost-newsletter@mail.beehiiv.com",
       "enabled": true
     },
     {
-      "name": "The Verge",
-      "email": "newsletter@theverge.com",
-      "enabled": false
+      "name": "The Rundown AI ",
+      "email": "news@daily.therundown.ai",
+      "enabled": true
+    },
+    {
+      "name": ".NET Drip",
+      "email": "drip@dotnetdrip.com",
+      "enabled": true
+    },
+    {
+      "name": "TLDR AI",
+      "email": "dan@tldrnewsletter.com",
+      "enabled": true
+    },
+    {
+      "name": "TLDR Dev",
+      "email": "dan@tldrnewsletter.com",
+      "enabled": true
     }
   ]
 }

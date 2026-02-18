@@ -1,4 +1,5 @@
 import sys
+import time
 from gmail_client import (
     get_gmail_service,
     get_emails_by_sender,
@@ -13,53 +14,92 @@ from config import GMAIL_USER, GMAIL_APP_PASSWORD, SENDERS
 
 
 def process_sender(mail, sender: dict) -> None:
-    """處理單一寄件者的所有 newsletter"""
+    """Process all newsletters from a single sender"""
     name  = sender['name']
     email = sender['email']
 
     print(f"\n{'='*50}")
-    print(f"📂 寄件者：{name} ({email})")
+    print(f"📂 Sender: {name} ({email})")
     print(f"{'='*50}")
 
     msg_ids = get_emails_by_sender(mail, email)
     if not msg_ids:
-        print("📭 沒有新信件，跳過")
+        print("📭 No new emails, skipping")
         return
 
-    print(f"📬 找到 {len(msg_ids)} 封信件")
+    print(f"📬 Found {len(msg_ids)} emails")
 
     for msg_id in msg_ids:
+        print(f"\n  🔍 Reading email ID: {msg_id.decode()}...")
         email_data = get_email_content(mail, msg_id)
         subject    = email_data['subject']
-        links      = email_data['links']
+        links_data = email_data['links']  # Now a list of dicts
 
-        print(f"\n  📧 信件主旨：{subject}")
-        print(f"  🔗 找到 {len(links)} 個連結")
+        print(f"  📧 Subject: {subject}")
+        
+        # Pre-filter links for TLDR newsletters
+        if "TLDR" in name:
+            original_count = len(links_data)
+            links_data = [
+                item for item in links_data 
+                if "sponser" not in item['title'].lower() 
+                and "sponsor" not in item['title'].lower()
+                and "linkedin.com" not in item['url'].lower()
+            ]
+            filter_count = original_count - len(links_data)
+            if filter_count > 0:
+                print(f"  ✂️  Filtered out {filter_count} sponsored/LinkedIn links for TLDR")
 
-        if not links:
-            print("  ⚠️  沒有找到任何連結，跳過此封信件")
+        print(f"  🔗 Found {len(links_data)} valid links")
+
+        if not links_data:
+            print("  ⚠️  No links found, skipping this email")
             delete_email(mail, msg_id)
             continue
 
         summaries = []
-        for i, url in enumerate(links, 1):
-            print(f"    [{i}/{len(links)}] 抓取：{url}")
+        for i, item in enumerate(links_data, 1):
+            url = item['url']
+            title = item['title']
+            desc = item['description']
+            
+            print(f"    [{i}/{len(links_data)}] Processing: {title[:50]}...")
+            print(f"    [➔] Original URL: {url[:80]}...")
+            
             content = fetch_article_content(url)
-            print(f"    [{i}/{len(links)}] 摘要中...")
-            summary = summarize_content(url, content)
-            summaries.append({'url': url, 'summary': summary})
+            
+            if content.startswith("[Error]"):
+                print(f"    ❌ Fetch failed: {content[:100]}")
+                summary = content
+            else:
+                print(f"    ✅ Fetch successful ({len(content)} chars), summarizing...")
+                summary = summarize_content(url, content)
+                print(f"    📝 Summary complete")
+                
+            summaries.append({
+                'url': url, 
+                'title': title, 
+                'description': desc, 
+                'summary': summary
+            })
 
+            # Add delay to avoid Azure OpenAI rate limits
+            if i < len(links_data):
+                print(f"    ⏳ Waiting 5 seconds before next link...")
+                time.sleep(5)
+
+        print(f"  📤 Sending summary email...")
         send_summary_email(subject, name, summaries)
         delete_email(mail, msg_id)
 
 
 def main() -> None:
     if not SENDERS:
-        print("⚠️  config.json 中沒有啟用的寄件者，請檢查 senders 設定")
+        print("⚠️  No enabled senders in config.json, please check senders settings")
         sys.exit(1)
 
-    print("🚀 Newsletter Bot 啟動")
-    print(f"📋 共 {len(SENDERS)} 個啟用的寄件者：")
+    print("🚀 Newsletter Bot Started")
+    print(f"📋 Total {len(SENDERS)} enabled senders:")
     for s in SENDERS:
         print(f"   - {s['name']} ({s['email']})")
 
@@ -71,16 +111,16 @@ def main() -> None:
             process_sender(mail, sender)
 
     except KeyboardInterrupt:
-        print("\n⛔ 使用者中斷執行")
+        print("\n⛔ Execution interrupted by user")
     except Exception as e:
-        print(f"\n❌ 發生錯誤：{e}")
+        print(f"\n❌ Error occurred: {e}")
         raise
     finally:
         if mail:
             close_connection(mail)
-            print("\n🔌 Gmail 連線已關閉")
+            print("\n🔌 Gmail connection closed")
 
-    print("\n🎉 全部完成！")
+    print("\n🎉 All done!")
 
 
 if __name__ == "__main__":

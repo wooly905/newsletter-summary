@@ -2,48 +2,69 @@ import requests
 from bs4 import BeautifulSoup
 
 
-MAX_CONTENT_LENGTH = 8000  # 避免超過 token 限制
+MAX_CONTENT_LENGTH = 12000  # Avoid exceeding token limits
 
 
 def fetch_article_content(url: str) -> str:
     """
-    抓取網頁內容並回傳純文字。
-    失敗時回傳錯誤訊息字串（不拋出例外，讓主流程繼續）。
+    Fetch webpage content and return plain text.
+    Returns error message string on failure (doesn't raise exception to keep flow going).
     """
+    session = requests.Session()
     try:
         headers = {
             'User-Agent': (
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                 'AppleWebKit/537.36 (KHTML, like Gecko) '
-                'Chrome/120.0.0.0 Safari/537.36'
-            )
+                'Chrome/122.0.0.0 Safari/537.36'
+            ),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
         }
-        response = requests.get(url, headers=headers, timeout=15)
+        
+        # Use Session and allow redirects to handle tracking links like ConvertKit or Medium
+        response = session.get(url, headers=headers, timeout=20, allow_redirects=True)
+        
+        # Handle Medium's potential 403 by retrying with session cookies
+        if "medium.com" in response.url and response.status_code == 403:
+            response = session.get(response.url, headers=headers, timeout=20)
+            
+        if response.url != url:
+            print(f"      [➔] Redirected to: {response.url[:80]}...")
+            
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 移除不必要的元素
+        # Remove unnecessary elements
         for tag in soup(['script', 'style', 'nav', 'footer',
                          'header', 'aside', 'form', 'iframe']):
             tag.decompose()
 
-        # 優先嘗試取得 <article> 或 <main> 內容
+        # Try to get <article> or <main> content first
         main_content = soup.find('article') or soup.find('main')
         if main_content:
             text = main_content.get_text(separator='\n', strip=True)
         else:
             text = soup.get_text(separator='\n', strip=True)
 
-        # 清理多餘空白行
+        # Clean up extra blank lines
         lines = [line.strip() for line in text.splitlines() if line.strip()]
         cleaned = '\n'.join(lines)
 
         return cleaned[:MAX_CONTENT_LENGTH]
 
     except requests.exceptions.Timeout:
-        return f"[錯誤] 連線逾時：{url}"
+        return f"[Error] Connection timeout: {url}"
     except requests.exceptions.HTTPError as e:
-        return f"[錯誤] HTTP 錯誤 {e.response.status_code}：{url}"
+        return f"[Error] HTTP Error {e.response.status_code}: {url}"
     except Exception as e:
-        return f"[錯誤] 無法抓取內容：{e}"
+        return f"[Error] Failed to fetch content: {e}"

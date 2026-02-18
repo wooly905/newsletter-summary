@@ -8,7 +8,7 @@ from config import (
     AZURE_API_VERSION,
 )
 
-# 根據 provider 初始化對應的 client
+# Initialize the corresponding client based on provider
 if OPENAI_PROVIDER == "azure":
     client = AzureOpenAI(
         api_key=OPENAI_API_KEY,
@@ -16,7 +16,7 @@ if OPENAI_PROVIDER == "azure":
         azure_deployment=AZURE_DEPLOYMENT_NAME,
         api_version=AZURE_API_VERSION,
     )
-    _model = AZURE_DEPLOYMENT_NAME  # Azure 以 deployment name 作為 model 參數
+    _model = AZURE_DEPLOYMENT_NAME  # Azure uses deployment name as model parameter
 else:
     client = OpenAI(api_key=OPENAI_API_KEY)
     _model = OPENAI_MODEL
@@ -24,10 +24,10 @@ else:
 
 def summarize_content(url: str, content: str) -> str:
     """
-    呼叫 OpenAI / Azure OpenAI API，將文章內容摘要成台灣中文。
-    若內容為錯誤訊息（抓取失敗），直接回傳該訊息。
+    Call OpenAI / Azure OpenAI API to summarize article content into Traditional Chinese (Taiwan).
+    If content is an error message (fetch failed), return the message directly.
     """
-    if content.startswith("[錯誤]"):
+    if content.startswith("[Error]"):
         return content
 
     prompt = f"""你是一位專業的文章摘要助理，請用**台灣中文**將以下來自 {url} 的文章整理成摘要。
@@ -35,14 +35,15 @@ def summarize_content(url: str, content: str) -> str:
 請依照以下格式輸出：
 
 📌 **主題**：（一句話說明文章主旨）
+    **TLDR**：（回答文章的 TLDR 結論）
 
-🔑 **重點摘要**：
+🔑 **分段重點與結論**：
 1. 
 2. 
 3. 
-（視內容列出 3-5 點）
+（視內容列出 3-10 段）
 
-💡 **結論**：（2-3 句話總結）
+💡 **結論**：（五句話總結）
 
 ---
 文章內容：
@@ -61,7 +62,7 @@ def summarize_content(url: str, content: str) -> str:
                 "content": prompt
             }
         ],
-        max_tokens=1500,
+        max_tokens=4096,
         temperature=0.3,
     )
 
