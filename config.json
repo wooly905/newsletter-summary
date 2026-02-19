@@ -32,6 +32,11 @@
       "name": "TLDR Dev",
       "email": "dan@tldrnewsletter.com",
       "enabled": true
+    },
+    {
+      "name": "KDnuggets",
+      "email": "editor1@kdnuggets.com",
+      "enabled": true
     }
   ]
 }
