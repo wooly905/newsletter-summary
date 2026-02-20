@@ -7,7 +7,7 @@ from gmail_client import (
     delete_email,
     close_connection,
 )
-from scraper import fetch_article_content
+from scraper import fetch_article_content, resolve_redirect_url
 from openai_client import summarize_content
 from email_sender import send_summary_email
 from config import GMAIL_USER, GMAIL_APP_PASSWORD, SENDERS
@@ -58,6 +58,7 @@ def process_sender(mail, sender: dict) -> None:
             continue
 
         summaries = []
+        seen_resolved_urls = set()  # Track resolved article URLs to avoid duplicate articles
         for i, item in enumerate(links_data, 1):
             url = item['url']
             title = item['title']
@@ -65,8 +66,21 @@ def process_sender(mail, sender: dict) -> None:
             
             print(f"    [{i}/{len(links_data)}] Processing: {title[:50]}...")
             print(f"    [➔] Original URL: {url[:80]}...")
-            
-            content = fetch_article_content(url)
+
+            # Resolve tracking/redirect URL to the final article URL first
+            resolved_url = resolve_redirect_url(url)
+
+            # Normalize: strip query string and fragment — same hostname+path = same article
+            resolved_url_key = resolved_url.split('?')[0].split('#')[0].rstrip('/')
+
+            # Skip if we've already processed this article
+            if resolved_url_key in seen_resolved_urls:
+                print(f"    ⚠️  Skipping duplicate article: {resolved_url_key[:80]}...")
+                continue
+            seen_resolved_urls.add(resolved_url_key)
+
+            # Pass the already-resolved URL so fetch_article_content doesn't re-resolve it
+            content = fetch_article_content(resolved_url)
             
             if content.startswith("[Error]"):
                 if "too short" in content:

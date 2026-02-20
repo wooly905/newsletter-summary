@@ -218,7 +218,7 @@ def fetch_article_content(url: str) -> str:
             cleaned = '\n'.join(lines)
 
             # Check for minimum content length
-            if len(cleaned) < 1000:
+            if len(cleaned) < 3000:
                 return f"[Error] Content too short ({len(cleaned)} characters)"
 
             return cleaned[:MAX_CONTENT_LENGTH]
