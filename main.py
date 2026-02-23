@@ -83,7 +83,7 @@ def process_sender(mail, sender: dict) -> None:
             content = fetch_article_content(resolved_url)
             
             if content.startswith("[Error]"):
-                if "too short" in content:
+                if "too short" in content or "429" in content:
                     print(f"    ⚠️  Skipping: {content}")
                     continue
                 print(f"    ❌ Fetch failed: {content[:100]}")

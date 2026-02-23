@@ -197,6 +197,9 @@ def fetch_article_content(url: str) -> str:
             if str(response.url) != resolved_url:
                 print(f"      [➔] Redirected to: {str(response.url)[:80]}...")
 
+            if response.status_code == 429:
+                return f"[Error] HTTP Error 429 (Too Many Requests): {resolved_url}"
+
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, 'html.parser')
