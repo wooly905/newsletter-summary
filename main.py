@@ -87,6 +87,20 @@ def process_sender(mail, sender: dict) -> None:
             # Resolve tracking/redirect URL to the final article URL first
             resolved_url = resolve_redirect_url(url)
 
+            # Skip terms of service pages
+            resolved_path = resolved_url.lower().split('?')[0].split('#')[0]
+            TOS_KEYWORDS = ['terms-of-service', 
+                            'terms_of_service',
+                            '/terms-of-use',
+                            '/terms_of_use',
+                            '/tos',
+                            '/legal/terms',
+                            '/privacy-policy']
+                            
+            if any(kw in resolved_path for kw in TOS_KEYWORDS) or resolved_path.rstrip('/').endswith('/terms'):
+                print(f"    ⚠️  Skipping terms of service URL: {resolved_url[:80]}...")
+                continue
+
             # Normalize: strip query string and fragment — same hostname+path = same article
             resolved_url_key = resolved_url.split('?')[0].split('#')[0].rstrip('/')
 
