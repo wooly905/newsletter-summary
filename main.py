@@ -42,13 +42,11 @@ def process_sender(mail, sender: dict) -> None:
             original_count = len(links_data)
             links_data = [
                 item for item in links_data 
-                if "sponser" not in item['title'].lower() 
-                and "sponsor" not in item['title'].lower()
-                and "linkedin.com" not in item['url'].lower()
+                if "linkedin.com" not in item['url'].lower()
             ]
             filter_count = original_count - len(links_data)
             if filter_count > 0:
-                print(f"  ✂️  Filtered out {filter_count} sponsored/LinkedIn links for TLDR")
+                print(f"  ✂️  Filtered out {filter_count} LinkedIn links for TLDR")
 
         print(f"  🔗 Found {len(links_data)} valid links")
 
@@ -56,6 +54,18 @@ def process_sender(mail, sender: dict) -> None:
             print("  ⚠️  No links found, skipping this email")
             delete_email(mail, msg_id)
             continue
+
+        COMMERCIAL_KEYWORDS = [
+            'advertis',
+            'sponsor',
+            'sponser',
+            'promoted',
+            'promotion',
+            'partner',
+            'affiliate',
+            'commercial',
+            'advert',
+        ]
 
         summaries = []
         seen_resolved_urls = set()  # Track resolved article URLs to avoid duplicate articles
@@ -66,6 +76,13 @@ def process_sender(mail, sender: dict) -> None:
             
             print(f"    [{i}/{len(links_data)}] Processing: {title[:50]}...")
             print(f"    [➔] Original URL: {url[:80]}...")
+
+            # Skip commercial/sponsored links based on URL or title
+            url_lower = url.lower()
+            title_lower = title.lower()
+            if any(kw in url_lower or kw in title_lower for kw in COMMERCIAL_KEYWORDS):
+                print(f"    ⚠️  Skipping commercial/sponsored link: {title[:60]}")
+                continue
 
             # Resolve tracking/redirect URL to the final article URL first
             resolved_url = resolve_redirect_url(url)
